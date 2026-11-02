@@ -7,10 +7,10 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color('#62d8ff');
 scene.fog = new THREE.Fog('#8ce7ff', 100, 280);
 const camera = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, .1, 420);
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6)); renderer.setSize(innerWidth, innerHeight);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, .7)); renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = false;
 scene.add(new THREE.HemisphereLight(0xc9f7ff, 0x7d8cbf, 2.1));
 const sun = new THREE.DirectionalLight(0xfff5d6, 3.1); sun.position.set(-34, 58, 24); sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -38, right: 38, top: 45, bottom: -45 }); sun.shadow.bias = -.0004; scene.add(sun);
@@ -23,30 +23,40 @@ const geo = { box:new THREE.BoxGeometry(1,1,1), sphere:new THREE.SphereGeometry(
 const mesh = (g,m,parent=scene) => { const o=new THREE.Mesh(g,m); o.castShadow=true; o.receiveShadow=true; parent.add(o); return o; };
 function box(x,y,z,sx,sy,sz,mat,parent=scene){ const o=mesh(geo.box,mat,parent); o.position.set(x,y,z); o.scale.set(sx,sy,sz); return o; }
 function sphere(x,y,z,sx,sy,sz,mat,parent=scene){ const o=mesh(geo.sphere,mat,parent); o.position.set(x,y,z); o.scale.set(sx,sy,sz); return o; }
+function addInstances(geometry,material,items){
+ const instanced=new THREE.InstancedMesh(geometry,material,items.length),transform=new THREE.Object3D();
+ instanced.castShadow=false;instanced.receiveShadow=false;
+ items.forEach((item,index)=>{transform.position.set(...item.position);transform.scale.set(...item.scale);transform.updateMatrix();instanced.setMatrixAt(index,transform.matrix)});
+ instanced.instanceMatrix.needsUpdate=true;scene.add(instanced);return instanced;
+}
 function outline(o, scale=1.075){ const e=new THREE.Mesh(o.geometry,M.outline); e.position.copy(o.position); e.rotation.copy(o.rotation); e.scale.copy(o.scale).multiplyScalar(scale); e.renderOrder=1; o.renderOrder=2; o.parent.add(e); return e; }
 function labelTexture(text, bg='#103a75', fg='#fff', size=48){ const c=document.createElement('canvas'); c.width=1024;c.height=256;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,c.width,c.height);x.strokeStyle='#ffffff';x.lineWidth=12;x.strokeRect(8,8,1008,240);x.fillStyle=fg;x.textAlign='center';x.textBaseline='middle';x.font=`900 ${size}px Nunito, sans-serif`;let words=text.split(' '),lines=[],line='';for(const w of words){const test=line?line+' '+w:w;if(x.measureText(test).width>920){lines.push(line);line=w}else line=test}lines.push(line);const lh=Math.min(62,190/lines.length);lines.forEach((v,i)=>x.fillText(v,512,128+(i-(lines.length-1)/2)*lh));return new THREE.CanvasTexture(c);}
 function banner(text,z,y=7){ const t=new THREE.Mesh(new THREE.PlaneGeometry(10,2.5),new THREE.MeshBasicMaterial({map:labelTexture(text,'#12356c','#fff35b',38),side:THREE.DoubleSide}));t.position.set(0,y,z);scene.add(t);return t; }
 function makeArch(z,y=0,text='CHECKPOINT'){ const h=5.6;box(-10,y+h/2,z,.65,h,.7,M.pink);box(10,y+h/2,z,.65,h,.7,M.blue);box(0,y+h,z,20.8,.72,.8,M.yellow);box(0,y+h-.7,z,18,.18,.94,M.dark);banner(text,z-.46,y+h+.6);for(let x of [-10,10]){const flag=mesh(new THREE.ConeGeometry(.65,1.3,4),M.white);flag.position.set(x,y+h+.85,z);flag.rotation.z=Math.PI;scene.add(flag)}}
 // Sky islands, soft clouds, and the roaming scoreboard blimp.
-for(let i=0;i<24;i++){const x=(Math.random()-.5)*140,z=-Math.random()*240-8,y=20+Math.random()*28;const cloud=new THREE.Group();scene.add(cloud);for(let j=0;j<4;j++)sphere(x+(j-1.5)*1.6,y+Math.random()*.55,z,1.8+Math.random()*.8,.7+Math.random()*.35,1.15,M.white,cloud);}
+const cloudInstances=[];for(let i=0;i<24;i++){const x=(Math.random()-.5)*140,z=-Math.random()*240-8,y=20+Math.random()*28;for(let j=0;j<4;j++)cloudInstances.push({position:[x+(j-1.5)*1.6,y+Math.random()*.55,z],scale:[1.8+Math.random()*.8,.7+Math.random()*.35,1.15]});}addInstances(geo.sphere,M.white,cloudInstances);
 const blimp=new THREE.Group();scene.add(blimp);sphere(0,0,0,5.2,1.4,1.7,M.gold,blimp);const gondola=box(0,-1.7,0,2.8,.65,1.1,M.pink,blimp);gondola.position.z=.2;const blimpText=new THREE.Mesh(new THREE.PlaneGeometry(4.5,1.15),new THREE.MeshBasicMaterial({map:labelTexture('CROWN RUSH!','#11285c','#ffe600',70),side:THREE.DoubleSide}));blimpText.position.set(0,0,1.6);blimp.add(blimpText);blimp.position.set(-17,18,-24);
 // Course deck and checkerboard treatment.
-box(0,-.7,-27,22,1.3,72,M.blue2);for(let z=8;z>-64;z-=4)for(let x=-10;x<11;x+=4)box(x,.015,z,3.98,.08,3.98,((Math.round(z/4)+Math.round(x/4))&1)?M.blue2:M.pink2);
+box(0,-.7,-27,22,1.3,72,M.blue2);const startTiles=[[],[]];for(let z=8;z>-64;z-=4)for(let x=-10;x<11;x+=4)startTiles[((Math.round(z/4)+Math.round(x/4))&1)?0:1].push({position:[x,.015,z],scale:[3.98,.08,3.98]});addInstances(geo.box,M.blue2,startTiles[0]);addInstances(geo.box,M.pink2,startTiles[1]);
 // Ramp from z=-63 to -96, climbing toward the tile bridge.
 const rampGeo=new THREE.BufferGeometry();rampGeo.setAttribute('position',new THREE.Float32BufferAttribute([-11,0,-62,11,0,-62,11,4,-98,-11,4,-98],3));rampGeo.setIndex([0,2,1,0,3,2]);rampGeo.computeVertexNormals();mesh(rampGeo,new THREE.MeshStandardMaterial({color:'#5be89b',roughness:.7,side:THREE.DoubleSide}));
 for(let i=0;i<8;i++){const z=-65-i*3.9,y=.35+(i/8)*3.9;const b=mesh(geo.cyl,M.pink);b.position.set(i%2?-6:6,y,z);b.scale.set(1.05,1.2,1.05);b.rotation.x=Math.PI/2;outline(b,1.09)}
-// Bridge tiles: six columns by eight rows, individually animated and respawnable.
-box(0,3.6,-120,21,.5,39,M.dark);const tiles=[];
-for(let r=0;r<11;r++)for(let c=0;c<6;c++){const x=(c-2.5)*3.05,z=-101-r*4.55;const g=new THREE.CylinderGeometry(1.7,1.7,.55,6);const t=mesh(g,(r+c)%2?M.yellow:toon('#ffef55'));t.position.set(x,4.05,z);t.rotation.y=Math.PI/6;const edge=outline(t,1.045);tiles.push({mesh:t,outline:edge,x,z,state:'ready',timer:0});}
+// Bridge tiles: animate and respawn tile transforms while rendering the whole field in two draw calls.
+box(0,3.6,-120,21,.5,39,M.dark);const tiles=[],tileGeometry=new THREE.CylinderGeometry(1.7,1.7,.55,6),tileMaterial=new THREE.MeshToonMaterial({color:'#ffffff',vertexColors:true});
+for(let r=0;r<11;r++)for(let c=0;c<6;c++){const x=(c-2.5)*3.05,z=-101-r*4.55,position=new THREE.Vector3(x,4.05,z),rotation=new THREE.Euler(0,Math.PI/6,0);tiles.push({mesh:{position,rotation,visible:true},outline:{position:position.clone(),rotation:rotation.clone(),visible:true},color:(r+c)%2?'#ffe600':'#ffef55',x,z,state:'ready',timer:0});}
+const tileInstances=new THREE.InstancedMesh(tileGeometry,tileMaterial,tiles.length),tileOutlines=new THREE.InstancedMesh(tileGeometry,M.outline,tiles.length),tileTransform=new THREE.Object3D();tileOutlines.renderOrder=1;tileInstances.renderOrder=2;tileInstances.castShadow=tileOutlines.castShadow=false;scene.add(tileOutlines,tileInstances);
+for(let i=0;i<tiles.length;i++){tileInstances.setColorAt(i,new THREE.Color(tiles[i].color));}tileInstances.instanceColor.needsUpdate=true;
+function syncTileInstances(){for(let i=0;i<tiles.length;i++){const t=tiles[i];tileTransform.position.copy(t.mesh.position);tileTransform.rotation.copy(t.mesh.rotation);tileTransform.scale.setScalar(t.mesh.visible?1:0);tileTransform.updateMatrix();tileInstances.setMatrixAt(i,tileTransform.matrix);tileTransform.position.copy(t.outline.position);tileTransform.rotation.copy(t.outline.rotation);tileTransform.scale.setScalar(t.outline.visible?1.045:0);tileTransform.updateMatrix();tileOutlines.setMatrixAt(i,tileTransform.matrix)}tileInstances.instanceMatrix.needsUpdate=true;tileOutlines.instanceMatrix.needsUpdate=true;}
+let tileInstancesDirty=true;syncTileInstances();tileInstancesDirty=false;
 // Hex bridge foundation is only a safety visual far below the stepping stones.
 for(let i=0;i<4;i++){const pivot=new THREE.Group();pivot.position.set(0,11,-108-i*9);scene.add(pivot);const chain=mesh(new THREE.CylinderGeometry(.13,.13,4.3,10),M.dark,pivot);chain.position.y=-2.2;const head=sphere(0,-4.8,0,1.35,1.25,1.8,M.orange,pivot);const handle=box(0,-4.8,0,3.9,.45,.65,M.yellow,pivot);outline(head,1.06);tiles[i].hammer=pivot;}
 // Final climb and striped racing surface.
 const finalGeo=new THREE.BufferGeometry();finalGeo.setAttribute('position',new THREE.Float32BufferAttribute([-11,4,-150,11,4,-150,11,9.5,-198,-11,9.5,-198],3));finalGeo.setIndex([0,2,1,0,3,2]);finalGeo.computeVertexNormals();mesh(finalGeo,new THREE.MeshStandardMaterial({color:'#20d9b2',roughness:.65,side:THREE.DoubleSide}));
-for(let z=-152;z>-200;z-=4)for(let x=-10;x<11;x+=4)box(x,4+(-z-150)*.115+.07,z,3.98,.08,3.98,((Math.round(z/4)+Math.round(x/4))&1)?M.blue2:M.pink2);
+const finalTiles=[[],[]];for(let z=-152;z>-200;z-=4)for(let x=-10;x<11;x+=4)finalTiles[((Math.round(z/4)+Math.round(x/4))&1)?0:1].push({position:[x,4+(-z-150)*.115+.07,z],scale:[3.98,.08,3.98]});addInstances(geo.box,M.blue2,finalTiles[0]);addInstances(geo.box,M.pink2,finalTiles[1]);
 function groundAt(z){if(z>-62)return 0;if(z>-98)return (-z-62)*.111;if(z>-150)return 4;if(z>-198)return 4+(-z-150)*.115;return 9.5}
 makeArch(2,0,'START YOUR ENGINES!');makeArch(-59,0,'CHECKPOINT 1');makeArch(-96,4,'CHECKPOINT 2');makeArch(-151,4,'CHECKPOINT 3');makeArch(-198,9.5,'FINISH!');
 // Decorative rails, foam pylons, and stage markers.
-for(let z=5;z>-199;z-=4){const y=groundAt(z);for(let x of [-11.2,11.2]){box(x,y+.35,z,.48,.7,3.8,z<-150?M.green:z<-98?M.yellow:M.pink);}}
+const rails={pink:[],yellow:[],green:[]};for(let z=5;z>-199;z-=4){const y=groundAt(z),key=z<-150?'green':z<-98?'yellow':'pink';for(const x of [-11.2,11.2])rails[key].push({position:[x,y+.35,z],scale:[.48,.7,3.8]});}addInstances(geo.box,M.pink,rails.pink);addInstances(geo.box,M.yellow,rails.yellow);addInstances(geo.box,M.green,rails.green);
 for(const [z,title,color] of [[-19,'SWEEPER CITY',C.pink],[-71,'CANNON ALLEY',C.orange],[-119,'HEX-A-DROP',C.yellow],[-175,'SLIME CLIMB',C.green]]){const g=new THREE.Group();scene.add(g);const tx=new THREE.Mesh(new THREE.PlaneGeometry(7,1.45),new THREE.MeshBasicMaterial({map:labelTexture(title,'#172653',color,54),side:THREE.DoubleSide}));tx.position.set(0,7,z);g.add(tx)}
 // Collectibles / finish crown and podium.
 const crown=new THREE.Group();scene.add(crown);crown.position.set(0,10.8,-199);const crownRing=mesh(new THREE.TorusGeometry(1.55,.3,12,48),M.gold,crown);crownRing.rotation.x=Math.PI/2;for(let i=0;i<5;i++){const p=mesh(new THREE.ConeGeometry(.42,1.25,5),M.yellow,crown);const a=i*Math.PI*2/5;p.position.set(Math.cos(a)*1.35,.55,Math.sin(a)*1.35)}sphere(0,0,0,1.7,.32,1.7,M.gold,crown);box(0,9.5,-200,8,1,8,M.gold);box(0,8.5,-200,9,1,9,M.pink);
@@ -90,11 +100,19 @@ function makeRunner(color,champion=false){
  for(let i=0;i<4;i++){const s=mesh(new THREE.ShapeGeometry(new THREE.Shape().setFromPoints(Array.from({length:10},(_,k)=>{const a=k*Math.PI/5-Math.PI/2,r=k%2?.13:.3;return new THREE.Vector2(Math.cos(a)*r,Math.sin(a)*r)}))),M.yellow,starGroup);s.position.set(Math.cos(i*Math.PI/2)*.72,0,Math.sin(i*Math.PI/2)*.3);s.rotation.y=Math.PI/2;}
  return {root,body,arms,legs,starGroup};
 }
+const botInstances=new THREE.InstancedMesh(geo.sphere,new THREE.MeshToonMaterial({color:'#ffffff',vertexColors:true}),15);
+const botOutlineInstances=new THREE.InstancedMesh(geo.sphere,M.outline,15);botInstances.castShadow=botOutlineInstances.castShadow=false;scene.add(botOutlineInstances,botInstances);
+const botTransform=new THREE.Object3D(),botLocal=new THREE.Object3D(),botOutlineTransform=new THREE.Matrix4();
+botLocal.position.y=1.05;botLocal.scale.set(.64,1.02,.5);
+function makeBotRunner(){const root=new THREE.Group(),body=new THREE.Group();root.add(body);return {root,body,arms:[],legs:[],starGroup:{visible:false,rotation:{y:0},position:{y:2.7}}};}
 const playerVisual=makeRunner(C.gold,true);scene.add(playerVisual.root);
 const player={...playerVisual,x:0,z:4,y:0,vx:0,vz:0,vy:0,heading:0,grounded:true,stun:0,dive:0,diveUsed:false,checkpoint:0,knock:0,finished:false,walk:0,falling:false};player.root.position.set(player.x,player.y,player.z);
 // Bot crowd starts shoulder-to-shoulder with the player and has varied neon uniforms.
 const botColors=['#19e7f4','#ff487f','#91ff3d','#ab70ff','#ff7b32','#f4e839','#00c7a6','#f553de','#58a3ff','#ff5262','#bfff47','#ff9bd5','#8cfcff','#fb8b1c','#b2a1ff'];
-const bots=[];for(let i=0;i<15;i++){const vis=makeRunner(botColors[i]);scene.add(vis.root);const col=i%5,row=Math.floor(i/5),x=(col-2)*3.25+(Math.random()-.5)*.8,z=3+row*2.7;vis.root.position.set(x,0,z);bots.push({...vis,x,z,y:0,vx:0,vz:0,vy:0,grounded:true,stun:0,knock:0,walk:Math.random()*5,speed:7.6+Math.random()*1.7,lane:(col-2)*2.1,phase:Math.random()*8,jumpCd:1+Math.random()*3,checkpoint:0,finished:false});}
+const bots=[];for(let i=0;i<15;i++){const vis=makeBotRunner();const col=i%5,row=Math.floor(i/5),x=(col-2)*3.25+(Math.random()-.5)*.8,z=3+row*2.7;vis.root.position.set(x,0,z);bots.push({...vis,x,z,y:0,vx:0,vz:0,vy:0,grounded:true,stun:0,knock:0,walk:Math.random()*5,speed:7.6+Math.random()*1.7,lane:(col-2)*2.1,phase:Math.random()*8,jumpCd:1+Math.random()*3,checkpoint:0,finished:false});botInstances.setColorAt(i,new THREE.Color(botColors[i]));}
+botInstances.instanceColor.needsUpdate=true;
+function syncBotInstances(){for(let i=0;i<bots.length;i++){const b=bots[i];b.root.updateMatrix();b.body.updateMatrix();botTransform.matrix.multiplyMatrices(b.root.matrix,b.body.matrix);botLocal.updateMatrix();botTransform.matrix.multiply(botLocal.matrix);botInstances.setMatrixAt(i,botTransform.matrix);botLocal.scale.set(.69,1.08,.54);botLocal.updateMatrix();botOutlineTransform.multiplyMatrices(b.root.matrix,b.body.matrix).multiply(botLocal.matrix);botOutlineInstances.setMatrixAt(i,botOutlineTransform);botLocal.scale.set(.64,1.02,.5)}botInstances.instanceMatrix.needsUpdate=true;botOutlineInstances.instanceMatrix.needsUpdate=true;}
+syncBotInstances();
 const game={mode:'ready',time:0,countdown:0,bannerTimer:0,checkpoint:0,stage:0,wallClock:0,sound:true,confetti:[],finishCamera:false};
 const audioCtx=window.AudioContext?new AudioContext():null;
 function tone(freq=660,duration=.16,type='sine',volume=.07){if(!game.sound||!audioCtx)return;if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(volume,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration)}
@@ -126,13 +144,13 @@ function hitHazards(entity,isPlayer=false){if(entity.stun>0)return;
  for(let i=0;i<4;i++){const pivot=tiles[i].hammer,a=pivot.rotation.z,hx=Math.sin(a)*4.8,hY=11-Math.cos(a)*4.8;if(Math.abs(entity.z-pivot.position.z)<2.1&&Math.abs(entity.x-hx)<2.4&&Math.abs(entity.y+1.1-hY)<2.7)knock(entity,hx,pivot.position.z,22)}
  for(const w of foamWalls){if(Math.abs(entity.z-w.z)<1.45&&Math.abs(entity.x-w.mesh.position.x)<3.05&&entity.y<groundAt(entity.z)+3)knock(entity,w.mesh.position.x,w.z,14)}
 }
-function updateTiles(dt){for(const t of tiles){if(t.state==='shaking'){t.timer+=dt;t.mesh.position.y=4.05+Math.sin(t.timer*48)*.12;t.mesh.rotation.z=Math.sin(t.timer*38)*.06;if(t.timer>=.6){t.state='gone';t.timer=0;t.mesh.visible=false;t.outline.visible=false}}else if(t.state==='gone'){t.timer+=dt;if(t.timer>=3){t.state='ready';t.timer=0;t.mesh.visible=true;t.outline.visible=true;t.mesh.position.y=4.05;t.mesh.rotation.set(0,Math.PI/6,0)}}if(t.mesh.visible){t.outline.position.copy(t.mesh.position);t.outline.rotation.copy(t.mesh.rotation)}}}
+function updateTiles(dt){for(const t of tiles){if(t.state==='shaking'){t.timer+=dt;t.mesh.position.y=4.05+Math.sin(t.timer*48)*.12;t.mesh.rotation.z=Math.sin(t.timer*38)*.06;tileInstancesDirty=true;if(t.timer>=.6){t.state='gone';t.timer=0;t.mesh.visible=false;t.outline.visible=false}}else if(t.state==='gone'){t.timer+=dt;if(t.timer>=3){t.state='ready';t.timer=0;t.mesh.visible=true;t.outline.visible=true;t.mesh.position.y=4.05;t.mesh.rotation.set(0,Math.PI/6,0);tileInstancesDirty=true}}if(t.mesh.visible){t.outline.position.copy(t.mesh.position);t.outline.rotation.copy(t.mesh.rotation)}}if(tileInstancesDirty){syncTileInstances();tileInstancesDirty=false}}
 function updateHazards(dt){for(const h of spinners){h.pivot.rotation.y+=dt*Math.PI/4*h.sign;if(Math.abs(player.z-h.z)<11&&Math.abs(player.x)<11&&player.grounded)player.vx+=Math.sin(h.pivot.rotation.y)*dt*1.7}
  for(let i=0;i<4;i++){const pivot=tiles[i].hammer;pivot.rotation.z=Math.sin(game.wallClock*1.7+i*1.15)*.72}
  for(const w of foamWalls){w.mesh.position.x=Math.sin(game.wallClock*1.25+w.phase)*6.2}
  for(const ball of cannonBalls){ball.delay-=dt;if(!ball.active&&ball.delay<=0){ball.active=true;ball.mesh.visible=true;ball.z=-98.5}if(ball.active){ball.z+=dt*8.6;ball.mesh.position.set(ball.x,groundAt(ball.z)+1.3,ball.z);ball.mesh.rotation.x+=dt*2.8;if(ball.z>-61){ball.active=false;ball.mesh.visible=false;ball.delay=1.2}}}
  crown.rotation.y+=dt*1.3;crown.position.y=10.8+Math.sin(game.wallClock*2.4)*.35;}
-function animateRunner(e,dt,moving=true){e.walk+=dt*(moving?9:2);const amt=moving?1:0;const squash=1+Math.sin(e.walk*2)*.07*amt;e.body.scale.set(1,Math.max(.82,squash),1);for(let i=0;i<2;i++){e.legs[i].rotation.x=Math.sin(e.walk+i*Math.PI)*.52*amt;e.arms[i].rotation.x=Math.sin(e.walk+i*Math.PI+Math.PI)*.52*amt}if(e.starGroup.visible){e.starGroup.rotation.y+=dt*5;e.starGroup.position.y=2.65+Math.sin(e.walk*5)*.12}}
+function animateRunner(e,dt,moving=true){e.walk+=dt*(moving?9:2);const amt=moving?1:0;const squash=1+Math.sin(e.walk*2)*.07*amt;e.body.scale.set(1,Math.max(.82,squash),1);for(let i=0;i<2;i++){if(e.legs[i])e.legs[i].rotation.x=Math.sin(e.walk+i*Math.PI)*.52*amt;if(e.arms[i])e.arms[i].rotation.x=Math.sin(e.walk+i*Math.PI+Math.PI)*.52*amt}if(e.starGroup.visible){e.starGroup.rotation.y+=dt*5;e.starGroup.position.y=2.65+Math.sin(e.walk*5)*.12}}
 function stepRunner(e,dt,isPlayer=false){if(e.finished)return;
  const floor=surfaceAt(e.x,e.z);if(e.grounded&&floor>-50){e.y=floor;trip(tileUnder(e.x,e.z))}if(e.y<-7||Math.abs(e.x)>11.8||floor<-50&&e.y<2){respawn(e,isPlayer);return}
  if(e.stun>0){e.stun-=dt;e.vx*=Math.max(0,1-dt*1.5);e.vz*=Math.max(0,1-dt*1.5);e.vy-=30*dt;e.y+=e.vy*dt;e.x+=e.vx*dt;e.z+=e.vz*dt;if(e.stun<=0){e.body.rotation.set(0,0,0);e.knock=0;if(e.starGroup)e.starGroup.visible=false}}
@@ -194,9 +212,9 @@ function frame(now){
   if(game.bannerTimer>0){game.bannerTimer-=dt;if(game.bannerTimer<=0)$('checkpoint-banner').classList.remove('show')}
   if(game.time-lastHudUpdate>.12){updateHud();lastHudUpdate=game.time}
  }
- updateCamera(dt);renderer.render(scene,camera);
+ syncBotInstances();updateCamera(dt);renderer.render(scene,camera);
 }
 let lastFrame=performance.now(),lastHudUpdate=0;
-function onResize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight)}
+function onResize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio,.7));renderer.setSize(innerWidth,innerHeight)}
 window.addEventListener('resize',onResize);requestAnimationFrame(frame);
 requestAnimationFrame(()=>{$('loading').classList.add('done')});
