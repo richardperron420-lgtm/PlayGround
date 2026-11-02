@@ -71,6 +71,7 @@ const messages=[
 // Keep the personalized start line sentence exactly as provided.
 messages[0]="MADE JUST FOR YOU! I love you, I miss you, and you are my entire world. Let's tear up this track!";
 const checkpointZ=[2,-57,-94,-149];
+const finishHalfWidth=8.9; // Arch opening, minus the runner's half-width.
 const stageNames=['START LINE','SWEEPER CITY','CANNON ALLEY','HEX-A-DROP','SLIME CLIMB','CROWN PODIUM'];
 // Bean runners: layered toon meshes with bold dark silhouette outlines.
 function makeRunner(color,champion=false){
@@ -147,7 +148,7 @@ function stepRunner(e,dt,isPlayer=false){if(e.finished)return;
  if(isPlayer){
    if(Math.abs(e.x)>10.5)e.vx+=Math.sign(-e.x)*18;
    for(let cp=1;cp<=3;cp++)if(e.checkpoint<cp&&e.z<=checkpointZ[cp]){e.checkpoint=cp;game.checkpoint=cp;showMessage(cp);showToast(`CHECKPOINT ${cp} — YOU'RE SAFE!`,2.5)}
-   if(e.z<-196&&Math.abs(e.x)<4&&e.y>7.5)winRace();
+   if(e.z<-196&&Math.abs(e.x)<finishHalfWidth&&e.y>7.5)winRace();
   }else{
    for(let cp=1;cp<=3;cp++)if((e.checkpoint||0)<cp&&e.z<=checkpointZ[cp])e.checkpoint=cp;
    if(e.z<-196&&Math.abs(e.x)<10){e.finished=true;e.z=-199;e.vx=e.vz=0}
