@@ -157,6 +157,8 @@ function stepRunner(e,dt,isPlayer=false){if(e.finished)return;
 function winRace(){
  if(game.mode!=='running')return;
  game.mode='finished';game.finishCamera=true;player.finished=true;player.vx=player.vz=player.vy=0;player.starGroup.visible=true;
+ game.bannerTimer=0;$('checkpoint-banner').classList.remove('show');$('toast').classList.remove('show');
+ updateHud();
  $('race-status').textContent='CHAMPION';$('finish-time').textContent=formatTime(game.time);$('finish-screen').classList.remove('hidden');$('countdown').classList.add('hidden');
  chime();setTimeout(()=>tone(988,.28,'triangle'),260);spawnConfetti();
 }
