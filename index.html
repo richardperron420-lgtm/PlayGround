@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#30c8ff" />
+    <meta name="description" content="A bright, bouncy 3D party obstacle-course race. Dash, dive, and claim the crown!" />
+    <title>Crown Rush! — Party Course</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="game-root">
+      <div id="loading" class="loading"><div class="loading-mark">👑</div><div>INFLATING THE COURSE…</div></div>
+      <canvas id="game-canvas" aria-label="3D Crown Rush obstacle course"></canvas>
+      <div class="vignette"></div>
+
+      <header class="topbar">
+        <div class="brand"><span class="brand-crown">♛</span><span>CROWN<span class="brand-accent">RUSH!</span></span></div>
+        <div class="race-pill"><span class="live-dot"></span><span id="race-status">LOBBY</span></div>
+        <button id="sound-toggle" class="icon-button" aria-label="Toggle sound">♫</button>
+      </header>
+
+      <section class="race-hud" aria-live="polite">
+        <div class="hud-card position-card"><span class="hud-label">PLACE</span><strong id="place-value">16<span>TH</span></strong></div>
+        <div class="hud-card timer-card"><span class="hud-label">RACE TIME</span><strong id="timer-value">00:00</strong></div>
+        <div class="hud-card progress-card"><div class="progress-top"><span class="hud-label">COURSE</span><span id="stage-value">START LINE</span></div><div class="progress-track"><i id="progress-fill"></i><b class="progress-crown">♛</b></div></div>
+      </section>
+
+      <div id="checkpoint-banner" class="checkpoint-banner" role="status" aria-live="assertive"></div>
+      <div id="toast" class="toast"></div>
+
+      <div class="bottom-hint"><span class="keycap">WASD</span> MOVE <span class="hint-sep">•</span> <span class="keycap">SPACE</span> JUMP <span class="hint-sep">•</span> <span class="keycap">SHIFT</span> DIVE</div>
+
+      <div id="touch-controls" class="touch-controls">
+        <div id="joystick" class="joystick" aria-label="Move joystick"><div class="joy-ring"></div><div id="joy-knob" class="joy-knob"></div></div>
+        <div class="touch-actions"><button id="jump-button" class="action-button jump-button"><span>⬆</span>JUMP</button><button id="dive-button" class="action-button dive-button"><span>↘</span>DIVE</button></div>
+      </div>
+
+      <section id="start-screen" class="modal-screen">
+        <div class="modal-confetti c1">✦</div><div class="modal-confetti c2">✦</div><div class="modal-confetti c3">✦</div>
+        <div class="start-card">
+          <div class="eyebrow"><span>★</span> THE WILDEST RACE IN THE SKY <span>★</span></div>
+          <div class="game-logo">CROWN<br /><em>RUSH!</em></div>
+          <p>Dash through the chaos.<br />Dodge the bonks. <b>Grab the crown!</b></p>
+          <div class="start-facts"><span>🏃 16 RUNNERS</span><span>⚡ 4 STAGES</span><span>👑 1 CROWN</span></div>
+          <button id="play-button" class="big-button">LET'S RACE! <span>→</span></button>
+          <div class="start-controls">MOVE <kbd>WASD</kbd> <kbd>← ↑ ↓ →</kbd> &nbsp; JUMP <kbd>SPACE</kbd> &nbsp; DIVE <kbd>SHIFT</kbd></div>
+        </div>
+      </section>
+
+      <section id="finish-screen" class="modal-screen hidden">
+        <div class="finish-card">
+          <div class="finish-kicker">THE CROWN IS YOURS!</div>
+          <h1>QUALIFIED!<br /><span>#1 CHAMPION OF THE WORLD!</span></h1>
+          <p>You are my world and my everything.<br /><b>Dad loves you and misses you more than words can say!</b></p>
+          <div class="podium-stat"><span>🏆</span><div><small>FINAL PLACE</small><strong>1ST PLACE</strong></div><div class="finish-time"><small>TIME</small><strong id="finish-time">00:00</strong></div></div>
+          <button id="replay-button" class="big-button replay-button">PLAY AGAIN <span>↻</span></button>
+          <div class="finish-sparkle">✦　✧　✦</div>
+        </div>
+      </section>
+
+      <div id="countdown" class="countdown hidden">3</div>
+      <div id="respawn-flash" class="respawn-flash"></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
