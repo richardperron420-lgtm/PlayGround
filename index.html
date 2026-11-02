@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101837" />
+  <meta name="description" content="A bright little obstacle-course adventure made with love." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E" />
+  <title>Little Legend Run — a tiny adventure, with a lot of love</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Little Legend Run home">
+        <span class="brand-mark">✦</span>
+        <span>LITTLE <b>LEGEND</b> RUN</span>
+      </a>
+      <div class="top-actions">
+        <button class="quiet-button" id="collectionButton" aria-label="Open memory collection"><span>▤</span><span class="button-label">Keepsakes</span><span class="collection-count" id="collectionCount">0/4</span></button>
+        <button class="icon-button" id="soundButton" aria-label="Toggle sound" title="Toggle sound">♫</button>
+      </div>
+    </header>
+
+    <section class="game-frame" aria-label="Little Legend Run game">
+      <canvas id="game" aria-label="Obstacle course game canvas" role="img"></canvas>
+      <div class="canvas-vignette"></div>
+
+      <div class="hud" id="hud" hidden>
+        <div class="hud-pill distance-pill"><span class="hud-icon">🏁</span><span><small>RUN DISTANCE</small><strong id="distanceReadout">0 <i>m</i></strong></span></div>
+        <div class="course-progress"><div class="progress-track"><div class="progress-fill" id="progressFill"></div><span class="progress-runner">●</span></div><div class="progress-labels"><span>START</span><span>THE BIG FINISH</span></div></div>
+        <div class="hud-right"><div class="hud-pill keepsake-pill"><span>✦</span><strong id="inRunCount">0</strong><small>KEEPSAKES</small></div><button class="icon-button pause-button" id="pauseButton" aria-label="Pause game">Ⅱ</button></div>
+      </div>
+
+      <div class="screen start-screen" id="startScreen">
+        <div class="intro-copy">
+          <div class="eyebrow"><span class="sparkle">✦</span> A VERY IMPORTANT, EXTREMELY SILLY ADVENTURE</div>
+          <h1>Little <span>Legend</span><br>Run<span class="title-period">.</span></h1>
+          <p class="intro-text">Big jumps. Wobbly obstacles. One tiny legend with<br class="desktop-break"> a whole lot of love cheering him on.</p>
+          <div class="intro-tags"><span>✦ Made just for you</span><span>☁ No hurry, ever</span></div>
+          <button class="primary-button" id="playButton"><span>LET'S PLAY</span><span class="button-arrow">→</span></button>
+          <div class="controls-hint">MOVE <kbd>←</kbd><kbd>→</kbd> &nbsp; JUMP <kbd>SPACE</kbd> &nbsp; or use touch controls</div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="hero-sun"></div><div class="hero-star star-a">✦</div><div class="hero-star star-b">✧</div>
+          <div class="hero-cloud cloud-a"></div><div class="hero-cloud cloud-b"></div>
+          <div class="hero-platform platform-back"></div><div class="hero-platform platform-front"></div>
+          <div class="hero-character"><div class="char-shadow"></div><div class="char-body"><div class="char-face"><i></i><i></i><b></b></div><div class="char-arm arm-left"></div><div class="char-arm arm-right"></div><div class="char-feet"></div></div><div class="hero-cape"></div></div>
+          <div class="hero-speech">READY, LEGEND? <span>↙</span></div>
+          <div class="hero-sticker">100%<br><b>AWESOME</b></div>
+        </div>
+        <div class="screen-footer"><span>💛 &nbsp; A little game about a very big love.</span><span>NO LEADERBOARDS. JUST YOU.</span></div>
+      </div>
+
+      <div class="screen pause-screen" id="pauseScreen" hidden>
+        <div class="dialog-card pause-card"><div class="dialog-icon">⏸</div><div class="eyebrow">TIME-OUT FOR SNACKS (OPTIONAL)</div><h2>Catch your breath,<br><span>champ.</span></h2><p>The obstacles will wait. They have nowhere important to be.</p><button class="primary-button" id="resumeButton"><span>BACK TO THE MAYHEM</span><span class="button-arrow">→</span></button><button class="text-button" id="restartFromPause">Start this run over</button></div>
+      </div>
+
+      <div class="screen finish-screen" id="finishScreen" hidden>
+        <div class="dialog-card finish-card"><div class="finish-confetti">✦ ✧ ✦</div><div class="eyebrow">OFFICIALLY, SCIENTIFICALLY, EXTREMELY</div><h2>LEGENDARY<span>!</span></h2><p>You made it to the finish. The foam hammers are still discussing what happened.</p><div class="finish-stats"><div><b id="finishTime">0:00</b><small>YOUR TIME</small></div><div><b id="finishCards">0/4</b><small>KEEPSAKES</small></div><div><b>∞</b><small>AWESOME</small></div></div><div class="finish-note">“I’m so proud of you. Always.” <span>— your biggest fan</span></div><button class="primary-button" id="playAgainButton"><span>RUN IT BACK</span><span class="button-arrow">↻</span></button><button class="text-button" id="finishKeepsakes">Read your keepsakes</button></div>
+      </div>
+
+      <div class="screen collection-screen" id="collectionScreen" hidden>
+        <div class="collection-panel">
+          <button class="close-button" id="closeCollection" aria-label="Close keepsakes">×</button>
+          <div class="eyebrow">PICKED UP ALONG THE WAY</div><h2>Your <span>keepsakes</span></h2><p class="collection-subtitle">Little notes for a big-hearted legend.</p>
+          <div class="memory-grid" id="memoryGrid"></div>
+          <div class="collection-foot">More notes are waiting out on the course. No rush to find them. 💛</div>
+        </div>
+      </div>
+
+      <div class="screen memory-screen" id="memoryScreen" hidden>
+        <div class="memory-card-pop"><div class="memory-spark">✦</div><div class="eyebrow" id="memoryEyebrow">A KEEPSAKE FOUND</div><div class="memory-card-title" id="memoryTitle">A little note</div><p id="memoryMessage"></p><div class="memory-signature">— your biggest fan <span>♥</span></div><button class="primary-button" id="continueButton"><span>KEEP GOING</span><span class="button-arrow">→</span></button><div class="no-rush">THE COURSE WILL WAIT FOR YOU</div></div>
+      </div>
+
+      <div class="toast" id="toast" aria-live="polite"><span class="toast-icon">🏆</span><div><b id="toastTitle">Achievement unlocked</b><small id="toastBody">Nice work, legend.</small></div></div>
+      <div class="mobile-controls" id="mobileControls" hidden><button id="leftControl" aria-label="Move left">←</button><button id="jumpControl" class="jump-control" aria-label="Jump">JUMP <span>↑</span></button><button id="rightControl" aria-label="Move right">→</button></div>
+    </section>
+    <footer class="page-footer"><span>Built for the greatest five-year-old to ever drop into Fortnite. 🎮</span><span>TAKE YOUR TIME · YOU'RE DOING GREAT</span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
